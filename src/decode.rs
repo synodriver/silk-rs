@@ -2,11 +2,11 @@ use bytes::{Buf, BufMut, Bytes, BytesMut};
 
 use crate::{sdk, CMemory, SilkError};
 
-pub fn decode_silk(src: Vec<u8>, sampleRate: i32) -> Result<Vec<u8>, SilkError> {
-    unsafe { _decode_silk(src, sampleRate) }
+pub fn decode_silk(src: Vec<u8>, sampleRate: i32, frame_size: i32, frames_per_packet: i32, more_internal_decoder_frames: i32, in_band_fec_offset: i32, loss: bool) -> Result<Vec<u8>, SilkError> {
+    unsafe { _decode_silk(src, sampleRate, frame_size, frames_per_packet, more_internal_decoder_frames, in_band_fec_offset, loss) }
 }
 
-unsafe fn _decode_silk(src: Vec<u8>, sample_rate: i32) -> Result<Vec<u8>, SilkError> {
+unsafe fn _decode_silk(src: Vec<u8>, sample_rate: i32, frame_size: i32, frames_per_packet: i32, more_internal_decoder_frames: i32, in_band_fec_offset: i32, loss: bool) -> Result<Vec<u8>, SilkError> {
     let mut src = Bytes::from(src);
     if src.starts_with("#!SILK_V3".as_bytes()) {
         src.advance("#!SILK_V3".len());
@@ -17,10 +17,10 @@ unsafe fn _decode_silk(src: Vec<u8>, sample_rate: i32) -> Result<Vec<u8>, SilkEr
     }
     let mut dec_control = sdk::SKP_SILK_SDK_DecControlStruct {
         API_sampleRate: sample_rate,
-        frameSize: 0,
-        framesPerPacket: 1,
-        moreInternalDecoderFrames: 0,
-        inBandFECOffset: 0,
+        frameSize: frame_size,  // 0
+        framesPerPacket: frames_per_packet, // 1
+        moreInternalDecoderFrames: more_internal_decoder_frames, // 0
+        inBandFECOffset: in_band_fec_offset, // 0
     };
     let mut dec_size = 0;
     let code = sdk::SKP_Silk_SDK_Get_Decoder_Size(&mut dec_size);
@@ -50,7 +50,7 @@ unsafe fn _decode_silk(src: Vec<u8>, sample_rate: i32) -> Result<Vec<u8>, SilkEr
         let code = sdk::SKP_Silk_SDK_Decode(
             dec.ptr,
             &mut dec_control,
-            0,
+            loss as i32,
             input.as_ptr(),
             n_bytes as i32,
             buf.as_mut_ptr() as *mut i16,
