@@ -6,19 +6,21 @@ pub fn encode_silk(
     src: Vec<u8>,
     sample_rate: i32,
     bit_rate: i32,
+    max_internal_sample_rate: i32,
     packet_loss_percentage: i32,
     complexity: i32,
     use_inband_fec: bool,
     use_dtx: bool,
     tencent: bool,
 ) -> Result<Vec<u8>, SilkError> {
-    unsafe { _encode_silk(src, sample_rate, bit_rate, packet_loss_percentage, complexity, use_inband_fec, use_dtx, tencent) }
+    unsafe { _encode_silk(src, sample_rate, bit_rate, max_internal_sample_rate, packet_loss_percentage, complexity, use_inband_fec, use_dtx, tencent) }
 }
 
 unsafe fn _encode_silk(
     src: Vec<u8>,
     sample_rate: i32,
     bit_rate: i32,
+    max_internal_sample_rate: i32,
     packet_loss_percentage: i32,
     complexity: i32,
     use_inband_fec: bool,
@@ -27,7 +29,7 @@ unsafe fn _encode_silk(
 ) -> Result<Vec<u8>, SilkError> {
     let mut enc_control = sdk::SKP_SILK_SDK_EncControlStruct {
         API_sampleRate: sample_rate,
-        maxInternalSampleRate: 24000,
+        maxInternalSampleRate: max_internal_sample_rate, // 24000
         packetSize: (20 * sample_rate) / 1000,
         bitRate: bit_rate,
         packetLossPercentage: packet_loss_percentage, // 0 0-100
